@@ -85,7 +85,7 @@
 <div id="predictionCategories"></div>
 <div class="prediction-disclaimer">⚠️ <b>Small-sample estimate:</b> This is a historical resampling model, not a calibrated betting probability. It uses only past weekly team totals, not upcoming schedules, injuries, lineup changes, or player projections. Historical performance does not guarantee next week's result.</div>
 </div>
-<div class="card"><h2 class="section">📚 Previous head-to-head weeks</h2><p class="muted">See how the same two teams would have matched up in every other recorded week, even when they were not scheduled opponents.</p><div id="historyComparison"></div></div><div class="card"><h2 class="section">🔮 Category-by-category outlook</h2><p class="muted" id="outlookScope">Historical category wins from weeks before the selected week. Turnovers: lower is better.</p><div id="categoryOutlook"></div></div>
+<div class="card"><h2 class="section">📚 Previous head-to-head weeks</h2><p class="muted">See how the same two teams would have matched up in every other recorded week, even when they were not scheduled opponents.</p><div id="historyComparison"></div></div><div class="card"><h2 class="section">🔮 Category-by-category outlook</h2><p class="muted" id="outlookScope">Historical category wins across all completed weeks, independent of the selected What-If week. Turnovers: lower is better.</p><div id="categoryOutlook"></div></div>
 <div class="card"><div class="allplay-head"><div><h2 class="section">🏟️ One team vs. the entire league</h2><p class="muted">See how your selected team would have performed against all 11 other teams in the chosen week.</p></div></div><label for="allplayTeam"><b>Choose your team</b></label><div style="margin:8px 0 12px"><select id="allplayTeam" aria-label="Choose team to compare against all opponents"><option selected>TiroLoco McGraw</option></select></div><p id="allplayWeek" class="ap-label">Week 4</p><div class="allplay-summary" id="allplaySummary"><div class="ap-stat"><strong>—</strong><span>Hypothetical wins</span></div><div class="ap-stat"><strong>—</strong><span>Hypothetical losses</span></div><div class="ap-stat"><strong>—</strong><span>Hypothetical ties</span></div></div><div id="allplayResults"><p class="muted">Open the published site in Safari to calculate all opponent results.</p></div><p class="muted">Results reflect the full completed week, not live matchups. Each opponent is treated as a hypothetical head-to-head matchup (9 categories; a tied category counts as a tie). This does not alter the league's official standings.</p></div></section>
 <section id="matchups" class="panel"><div class="card"><h2 class="section">Actual matchup results</h2><div id="games"></div></div></section>
 <section id="ranking" class="panel">
@@ -204,7 +204,6 @@ drawPairHistory(a.name,b.name);drawHistoricalPrediction(a.name,b.name);
 }
 function drawPairHistory(nameA,nameB){
 const weeks=Object.keys(store).map(Number).sort((a,b)=>a-b);
-const prior=weeks.filter(w=>w<week);
 const others=weeks.filter(w=>w!==week);
 const historical=others.map(w=>{
  const ts=teamlist(store[w]),a=ts.find(t=>t.name===nameA),b=ts.find(t=>t.name===nameB);
@@ -219,12 +218,12 @@ const historyRows=historical.map(({w,r})=>{
 $('historyComparison').innerHTML=historical.length?
 '<div class="allplay-summary"><div class="ap-stat"><strong>'+wins+'</strong><span>'+safe(nameA)+' wins</span></div><div class="ap-stat"><strong>'+losses+'</strong><span>'+safe(nameB)+' wins</span></div><div class="ap-stat"><strong>'+ties+'</strong><span>Tied matchups</span></div></div><div class="tablewrap">'+table(['Week','Score (A–B)','Result'],historyRows)+'</div><p class="muted">Scores are hypothetical nine-category comparisons. The selected Week '+week+' is excluded.</p>'
 :'<p class="muted">No other recorded weeks contain both selected teams.</p>';
-const sample=prior.map(w=>{
+const sample=weeks.map(w=>{
  const ts=teamlist(store[w]),a=ts.find(t=>t.name===nameA),b=ts.find(t=>t.name===nameB);
  return a&&b?compare(a,b):null;
 }).filter(Boolean);
-$('outlookScope').textContent='Based only on '+(sample.length?'Week'+(sample.length===1?'':'s')+' '+prior.filter(w=>{const ts=teamlist(store[w]);return ts.some(t=>t.name===nameA)&&ts.some(t=>t.name===nameB)}).join(', '):'available weeks before Week '+week)+'. Each week counts equally. Turnovers: lower is better.';
-if(!sample.length){$('categoryOutlook').innerHTML='<p class="muted">No earlier weeks are available for this selection. Choose a later week to see a historical outlook.</p>';return;}
+$('outlookScope').textContent='Based on all completed weeks: '+(sample.length?'Week'+(sample.length===1?'':'s')+' '+weeks.filter(w=>{const ts=teamlist(store[w]);return ts.some(t=>t.name===nameA)&&ts.some(t=>t.name===nameB)}).join(', '):'no matching historical weeks')+'. Each week counts equally. Independent of the What-If week selector. Turnovers: lower is better.';
+if(!sample.length){$('categoryOutlook').innerHTML='<p class="muted">No completed weeks contain both selected teams.</p>';return;}
 let aw=0,bw=0,tied=0;
 const rows=cats.map((c,i)=>{
  const aWins=sample.filter(r=>r.rows[i].result===1).length;
